@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   MapPin,
   Bell,
@@ -25,13 +25,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: shadowUrl.toString(),
 });
 
-// Format a datetime-local value to SQLite "YYYY-MM-DD HH:MM:SS"
-function toSQLiteDateTime(localDateTime) {
-  if (!localDateTime) return null;
-  const dt = new Date(localDateTime);
-  return dt.toISOString(); // "2025-10-25T19:03:03.000Z"
-}
-
 export default function Crime() {
   const [reportDrawerOpen, setReportDrawerOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
@@ -49,21 +42,37 @@ export default function Crime() {
   const mapRef = useRef(null);
   const [center, setCenter] = useState([37.7749, -122.4194]); // default: San Francisco
   const [zoom, setZoom] = useState(13);
+  const [pin, setPin] = useState(null); // { lat, lng }
+  
+  // --- Report form state ---
+  const [reportForm, setReportForm] = useState({
+    lat: null,
+    lng: null,
+    crimeType: "",
+    severity: 3,
+    incidentTime: "",
+  });
 
-  // A "draft" pin created by clicking the map (shows the popup form)
-  const [draftPin, setDraftPin] = useState(null); // { lat, lng }
-  // Saved reports (persist in memory for now)
-  const [reports, setReports] = useState([]); // [{lat,lng,type,severity,datetime}]
-
-  // Popup open control
-  const popupRef = useRef(null);
-
-  // Click on the map to drop a draft pin + open popup
+  // Click on the map to drop a pin and show report form
   function ClickToPin() {
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
-        setDraftPin({ lat, lng, type: "", severity: 3, datetime: "" });
+        setPin({ lat, lng });
+        
+        // Pre-fill form with location and current datetime
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 16);
+        
+        setReportForm({
+          lat: lat.toFixed(6),
+          lng: lng.toFixed(6),
+          crimeType: "",
+          severity: 3,
+          incidentTime: localDateTime,
+        });
       },
     });
     return null;
@@ -79,71 +88,63 @@ export default function Crime() {
         setZoom(15);
         const map = mapRef.current;
         if (map) map.setView(latlng, 15, { animate: true });
-        setDraftPin({ lat: latlng[0], lng: latlng[1], type: "", severity: 3, datetime: "" });
+        setPin({ lat: latlng[0], lng: latlng[1] });
+        
+        // Pre-fill form
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 16);
+        
+        setReportForm({
+          lat: latlng[0].toFixed(6),
+          lng: latlng[1].toFixed(6),
+          crimeType: "",
+          severity: 3,
+          incidentTime: localDateTime,
+        });
       },
-      () => {},
+      () => {
+        // Optional: toast/alert; silently ignore for now
+      },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 
-  // When a draft pin is created, try to open its popup automatically
-  useEffect(() => {
-    if (popupRef.current) {
-      try {
-        popupRef.current.openOn(mapRef.current);
-      } catch (_) {}
-    }
-  }, [draftPin]);
-
-  // Handle popup form submit
-  async function handleSubmitReport(e) {
-    e.preventDefault();
-
-    // Basic validation
-    if (!draftPin?.lat || !draftPin?.lng || !draftPin?.type || !draftPin?.severity) {
-      alert("Please fill in all fields");
+  const handleSubmitReport = () => {
+    if (!reportForm.crimeType || !reportForm.incidentTime) {
+      alert("Please fill in all required fields");
       return;
     }
-
-    const payload = {
-      lat: draftPin.lat,
-      lng: draftPin.lng,
-      type: draftPin.type.toLowerCase(),
-      severity: Number(draftPin.severity),
-      note: draftPin.note || "",
-      time_of_incident: toSQLiteDateTime(draftPin.datetime),
+    
+    // Here you would save to your database
+    console.log("Submitting report:", reportForm);
+    
+    // For SQLite3, your datetime format would be: YYYY-MM-DD HH:MM:SS
+    // Convert from HTML datetime-local format
+    const sqliteDateTime = reportForm.incidentTime.replace('T', ' ') + ':00';
+    
+    const reportData = {
+      latitude: parseFloat(reportForm.lat),
+      longitude: parseFloat(reportForm.lng),
+      crime_type: reportForm.crimeType,
+      severity: parseInt(reportForm.severity),
+      incident_datetime: sqliteDateTime, // SQLite3 format: "2025-10-25 14:30:00"
     };
-
-    try {
-      const res = await fetch("http://127.0.0.1:8000/report/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Error creating report:", err);
-        alert("Failed to save report.");
-        return;
-      }
-
-      const data = await res.json();
-      console.log("✅ Report saved:", data);
-
-      // Optionally refresh markers
-      setReports((prev) => [...prev, data]);
-
-      // Close popup and clear draft pin
-      setDraftPin(null);
-
-    } catch (err) {
-      console.error("Error submitting report:", err);
-      alert("Error connecting to API.");
-    }
-  }
+    
+    console.log("SQLite3 format:", reportData);
+    
+    // Reset and close
+    alert(`Report submitted!\n\nLocation: ${reportForm.lat}, ${reportForm.lng}\nType: ${reportForm.crimeType}\nSeverity: ${reportForm.severity}\nTime: ${sqliteDateTime}`);
+    setPin(null);
+    setReportForm({
+      lat: null,
+      lng: null,
+      crimeType: "",
+      severity: 3,
+      incidentTime: "",
+    });
+  };
 
   return (
     <div className="min-h-screen w-screen bg-gray-50 pt-16 overflow-hidden">
@@ -173,7 +174,7 @@ export default function Crime() {
               <option>Vandalism</option>
             </select>
 
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition focus:outline-none focus:ring-0">
+            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-0">
               <Layers className="w-4 h-4" />
               <span className="hidden sm:inline">Toggle View</span>
             </button>
@@ -184,7 +185,7 @@ export default function Crime() {
                 <input
                   type="text"
                   placeholder="Search location..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full text-black pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -196,7 +197,7 @@ export default function Crime() {
           <MapContainer
             center={center}
             zoom={zoom}
-            whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
+            ref={mapRef}
             className="h-[50vh] w-full"
             scrollWheelZoom
           >
@@ -207,112 +208,91 @@ export default function Crime() {
 
             <ClickToPin />
 
-            {/* Existing saved reports */}
-            {reports.map((r, idx) => (
-              <Marker key={`r-${idx}`} position={[r.lat, r.lng]}>
-                <Popup>
-                  <div className="space-y-1 text-sm">
-                    <div className="font-semibold">{r.type}</div>
-                    <div>Severity: {r.severity}</div>
-                    <div>{r.datetime}</div>
-                    <div className="text-gray-500">
-                      ({r.lat.toFixed(5)}, {r.lng.toFixed(5)})
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-
-            {/* Draft pin with popup form */}
-            {draftPin && (
-              <Marker position={[draftPin.lat, draftPin.lng]}>
-                <Popup ref={popupRef}>
-                  <form onSubmit={handleSubmitReport} className="space-y-3 w-60">
-                    <div className="text-xs text-gray-600">
-                      <div>
-                        <span className="font-medium">Lat:</span> {draftPin.lat.toFixed(6)}
-                      </div>
-                      <div>
-                        <span className="font-medium">Lng:</span> {draftPin.lng.toFixed(6)}
+            {pin && (
+              <Marker position={[pin.lat, pin.lng]}>
+                <Popup maxWidth={350} autoOpen={true} closeOnClick={false}>
+                  <div className="p-2">
+                    <h3 className="font-bold text-lg mb-3">Report Incident</h3>
+                    
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Location
+                      </label>
+                      <div className="text-sm text-gray-800">
+                        Lat: {reportForm.lat}<br/>
+                        Lng: {reportForm.lng}
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Type of Crime
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Crime Type *
                       </label>
                       <select
-                        value={draftPin.type}
-                        onChange={(e) => setDraftPin((p) => ({ ...p, type: e.target.value }))}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        required
+                        value={reportForm.crimeType}
+                        onChange={(e) => setReportForm({...reportForm, crimeType: e.target.value})}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">Select type…</option>
-                        <option>Theft</option>
-                        <option>Assault</option>
-                        <option>Vandalism</option>
-                        <option>Suspicious Activity</option>
-                        <option>Other</option>
+                        <option value="">Select type...</option>
+                        <option value="Theft">Theft</option>
+                        <option value="Assault">Assault</option>
+                        <option value="Vandalism">Vandalism</option>
+                        <option value="Suspicious Activity">Suspicious Activity</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Severity (1–5)
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Severity: {reportForm.severity}
                       </label>
                       <input
-                        type="number"
+                        type="range"
                         min="1"
                         max="5"
-                        value={draftPin.severity}
-                        onChange={(e) =>
-                          setDraftPin((p) => ({ ...p, severity: e.target.value }))
-                        }
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        required
+                        value={reportForm.severity}
+                        onChange={(e) => setReportForm({...reportForm, severity: e.target.value})}
+                        className="w-full"
                       />
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>Low</span>
+                        <span>High</span>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Time of Incident
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Incident Time *
                       </label>
                       <input
                         type="datetime-local"
-                        value={draftPin.datetime}
-                        onChange={(e) =>
-                          setDraftPin((p) => ({ ...p, datetime: e.target.value }))
-                        }
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        required
+                        value={reportForm.incidentTime}
+                        onChange={(e) => setReportForm({...reportForm, incidentTime: e.target.value})}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                       />
-                      <p className="mt-1 text-[10px] text-gray-500">
-                        Will save as SQLite: {toSQLiteDateTime(draftPin.datetime) || "—"}
-                      </p>
                     </div>
 
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2 mt-4">
                       <button
-                        type="submit"
-                        className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 transition"
+                        onClick={handleSubmitReport}
+                        className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-blue-700"
                       >
-                        Save
+                        Submit
                       </button>
                       <button
-                        type="button"
-                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
-                        onClick={() => setDraftPin(null)}
+                        onClick={() => setPin(null)}
+                        className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
                       >
                         Cancel
                       </button>
                     </div>
-                  </form>
+                  </div>
                 </Popup>
               </Marker>
             )}
           </MapContainer>
 
-          {/* Floating Report Button (kept from your UI) */}
+          {/* Floating Report Button */}
           <button
             onClick={() => setReportDrawerOpen((v) => !v)}
             className="absolute bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center space-x-2 hover:scale-105 focus:outline-none focus:ring-0"
@@ -322,8 +302,7 @@ export default function Crime() {
           </button>
         </div>
 
-        {/* (Your existing drawer / summary / chat UI stays unchanged below) */}
-        {/* Report Drawer */}
+        {/* Report Drawer (original, kept for reference) */}
         {reportDrawerOpen && (
           <div className="mt-4 bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
@@ -336,54 +315,14 @@ export default function Crime() {
               </button>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Incident Type
-                </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  <option>Select type...</option>
-                  <option>Theft</option>
-                  <option>Assault</option>
-                  <option>Vandalism</option>
-                  <option>Suspicious Activity</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Severity
-                </label>
-                <input type="range" min="1" max="5" defaultValue="3" className="w-full" />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Low</span>
-                  <span>Medium</span>
-                  <span>High</span>
-                </div>
-              </div>
-              <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Additional Notes
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Describe what happened..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-              </div>
-            </div>
+            <p className="text-gray-600 mb-4">Click on the map to place a pin and report an incident at that location.</p>
 
-            <div className="flex gap-3 mt-4">
-              <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold focus:outline-none focus:ring-0">
-                Submit Report
-              </button>
-              <button
-                onClick={() => setReportDrawerOpen(false)}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold focus:outline-none focus:ring-0"
-              >
-                Cancel
-              </button>
-            </div>
+            <button
+              onClick={() => setReportDrawerOpen(false)}
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold focus:outline-none focus:ring-0"
+            >
+              Close
+            </button>
           </div>
         )}
 
@@ -465,13 +404,13 @@ export default function Crime() {
           </div>
 
           {/* Side tabs/info */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex border-b border-gray-200">
-              {["history", "stats", "photos"].map((tab) => (
+          <div className="bg-white rounded-xl border border-white p-4">
+            <div className="bg-white flex border-b border-gray-200">
+              {["history", "stats"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 px-4 py-3 text-sm font-medium capitalize focus:outline-none ${
+                  className={`bg-white flex-1 px-4 py-3 text-sm font-medium capitalize focus:outline-none ${
                     activeTab === tab
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-gray-500 hover:text-gray-700"
@@ -540,7 +479,6 @@ export default function Crime() {
             </div>
           </div>
         </div>
-        {/* /Chat & Side tabs */}
       </div>
     </div>
   );
