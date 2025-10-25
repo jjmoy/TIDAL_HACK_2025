@@ -190,11 +190,6 @@ export default function Crime() {
               <option>Vandalism</option>
             </select>
 
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-0">
-              <Layers className="w-4 h-4" />
-              <span className="hidden sm:inline">Toggle View</span>
-            </button>
-
             <div className="flex-1 min-w-[220px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
