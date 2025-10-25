@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   MapPin,
   Bell,
@@ -9,6 +9,30 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
+
+// Leaflet / React-Leaflet
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+
+// --- Fix default Leaflet marker icon paths (works in Vite/CRA) ---
+const iconUrl = new URL("leaflet/dist/images/marker-icon.png", import.meta.url);
+const iconRetinaUrl = new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url);
+const shadowUrl = new URL("leaflet/dist/images/marker-shadow.png", import.meta.url);
+L.Icon.Default.mergeOptions({
+  iconUrl: iconUrl.toString(),
+  iconRetinaUrl: iconRetinaUrl.toString(),
+  shadowUrl: shadowUrl.toString(),
+});
+
+// Format a datetime-local value to SQLite "YYYY-MM-DD HH:MM:SS"
+function toSQLiteDateTime(dtLocal) {
+  if (!dtLocal) return "";
+  // dtLocal like "2025-10-25T14:05"
+  // ensure seconds
+  const withSeconds = dtLocal.length === 16 ? `${dtLocal}:00` : dtLocal;
+  return withSeconds.replace("T", " ");
+}
 
 export default function Crime() {
   const [reportDrawerOpen, setReportDrawerOpen] = useState(false);
@@ -23,32 +47,107 @@ export default function Crime() {
   const [chatInput, setChatInput] = useState("");
   const [activeTab, setActiveTab] = useState("history");
 
+  // --- Map state ---
+  const mapRef = useRef(null);
+  const [center, setCenter] = useState([37.7749, -122.4194]); // default: San Francisco
+  const [zoom, setZoom] = useState(13);
+
+  // A "draft" pin created by clicking the map (shows the popup form)
+  const [draftPin, setDraftPin] = useState(null); // { lat, lng }
+  // Saved reports (persist in memory for now)
+  const [reports, setReports] = useState([]); // [{lat,lng,type,severity,datetime}]
+
+  // Popup open control
+  const popupRef = useRef(null);
+
+  // Click on the map to drop a draft pin + open popup
+  function ClickToPin() {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setDraftPin({ lat, lng, type: "", severity: 3, datetime: "" });
+      },
+    });
+    return null;
+  }
+
+  // Locate Me handler
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const latlng = [pos.coords.latitude, pos.coords.longitude];
+        setCenter(latlng);
+        setZoom(15);
+        const map = mapRef.current;
+        if (map) map.setView(latlng, 15, { animate: true });
+        setDraftPin({ lat: latlng[0], lng: latlng[1], type: "", severity: 3, datetime: "" });
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  // When a draft pin is created, try to open its popup automatically
+  useEffect(() => {
+    if (popupRef.current) {
+      try {
+        popupRef.current.openOn(mapRef.current);
+      } catch (_) {}
+    }
+  }, [draftPin]);
+
+  // Handle popup form submit
+  const handleSubmitReport = (e) => {
+    e.preventDefault();
+    if (!draftPin) return;
+    const sqliteDate = toSQLiteDateTime(draftPin.datetime);
+    const newReport = {
+      lat: draftPin.lat,
+      lng: draftPin.lng,
+      type: draftPin.type || "Other",
+      severity: Number(draftPin.severity || 3),
+      datetime: sqliteDate || toSQLiteDateTime(new Date().toISOString().slice(0,16)),
+    };
+    setReports((r) => [...r, newReport]);
+    setDraftPin(null); // close popup by removing draft
+    // Optionally: show a toast, write to API/DB, etc.
+    console.log("Saved report:", newReport);
+  };
+
   return (
     <div className="min-h-screen w-screen bg-gray-50 pt-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Toolbar */}
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <button
+              onClick={handleLocate}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-0"
+            >
               <Locate className="w-4 h-4" />
               <span className="hidden sm:inline">Locate Me</span>
             </button>
+
             <select className="px-4 py-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option>0.5 miles</option>
               <option>1 mile</option>
               <option>2 miles</option>
               <option>5 miles</option>
             </select>
+
             <select className="px-4 py-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option>All Types</option>
               <option>Theft</option>
               <option>Assault</option>
               <option>Vandalism</option>
             </select>
-            <button className="bg-blue-600 flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-700 transition">
+
+            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition focus:outline-none focus:ring-0">
               <Layers className="w-4 h-4" />
               <span className="hidden sm:inline">Toggle View</span>
             </button>
+
             <div className="flex-1 min-w-[220px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -63,30 +162,137 @@ export default function Crime() {
         </div>
 
         {/* Map */}
-        <div className="mt-6 relative bg-gray-200 rounded-xl h-[50vh] overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg">Map Area Placeholder</p>
-              <p className="text-gray-400 text-sm mt-2">Interactive map will be displayed here</p>
-            </div>
-          </div>
+        <div className="mt-6 relative rounded-xl overflow-hidden">
+          <MapContainer
+            center={center}
+            zoom={zoom}
+            whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
+            className="h-[50vh] w-full"
+            scrollWheelZoom
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
 
-          {/* Demo pin */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <MapPin className="w-8 h-8 text-red-500 drop-shadow-lg animate-bounce" />
-          </div>
+            <ClickToPin />
 
-          {/* Floating Report Button */}
+            {/* Existing saved reports */}
+            {reports.map((r, idx) => (
+              <Marker key={`r-${idx}`} position={[r.lat, r.lng]}>
+                <Popup>
+                  <div className="space-y-1 text-sm">
+                    <div className="font-semibold">{r.type}</div>
+                    <div>Severity: {r.severity}</div>
+                    <div>{r.datetime}</div>
+                    <div className="text-gray-500">
+                      ({r.lat.toFixed(5)}, {r.lng.toFixed(5)})
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+            {/* Draft pin with popup form */}
+            {draftPin && (
+              <Marker position={[draftPin.lat, draftPin.lng]}>
+                <Popup ref={popupRef}>
+                  <form onSubmit={handleSubmitReport} className="space-y-3 w-60">
+                    <div className="text-xs text-gray-600">
+                      <div>
+                        <span className="font-medium">Lat:</span> {draftPin.lat.toFixed(6)}
+                      </div>
+                      <div>
+                        <span className="font-medium">Lng:</span> {draftPin.lng.toFixed(6)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Type of Crime
+                      </label>
+                      <select
+                        value={draftPin.type}
+                        onChange={(e) => setDraftPin((p) => ({ ...p, type: e.target.value }))}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        required
+                      >
+                        <option value="">Select type…</option>
+                        <option>Theft</option>
+                        <option>Assault</option>
+                        <option>Vandalism</option>
+                        <option>Suspicious Activity</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Severity (1–5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={draftPin.severity}
+                        onChange={(e) =>
+                          setDraftPin((p) => ({ ...p, severity: e.target.value }))
+                        }
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Time of Incident
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={draftPin.datetime}
+                        onChange={(e) =>
+                          setDraftPin((p) => ({ ...p, datetime: e.target.value }))
+                        }
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        required
+                      />
+                      <p className="mt-1 text-[10px] text-gray-500">
+                        Will save as SQLite: {toSQLiteDateTime(draftPin.datetime) || "—"}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 transition"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                        onClick={() => setDraftPin(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </Popup>
+              </Marker>
+            )}
+          </MapContainer>
+
+          {/* Floating Report Button (kept from your UI) */}
           <button
             onClick={() => setReportDrawerOpen((v) => !v)}
-            className="absolute bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center space-x-2 hover:scale-105"
+            className="absolute bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center space-x-2 hover:scale-105 focus:outline-none focus:ring-0"
           >
             <Bell className="w-5 h-5" />
             <span className="font-semibold">Report</span>
           </button>
         </div>
 
+        {/* (Your existing drawer / summary / chat UI stays unchanged below) */}
         {/* Report Drawer */}
         {reportDrawerOpen && (
           <div className="mt-4 bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
@@ -94,7 +300,7 @@ export default function Crime() {
               <h3 className="text-2xl font-bold text-gray-900">New Report</h3>
               <button
                 onClick={() => setReportDrawerOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition"
+                className="text-gray-400 hover:text-gray-600 transition focus:outline-none focus:ring-0"
               >
                 ✕
               </button>
@@ -138,12 +344,12 @@ export default function Crime() {
             </div>
 
             <div className="flex gap-3 mt-4">
-              <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+              <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold focus:outline-none focus:ring-0">
                 Submit Report
               </button>
               <button
                 onClick={() => setReportDrawerOpen(false)}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold"
+                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold focus:outline-none focus:ring-0"
               >
                 Cancel
               </button>
@@ -192,7 +398,7 @@ export default function Crime() {
                 <button
                   key={p}
                   onClick={() => setChatInput(p)}
-                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition"
+                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition focus:outline-none focus:ring-0"
                 >
                   {p}
                 </button>
@@ -221,7 +427,7 @@ export default function Crime() {
                     setChatInput("");
                   }
                 }}
-                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-0"
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -235,10 +441,10 @@ export default function Crime() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 px-4 py-3 text-sm font-medium capitalize ${
+                  className={`flex-1 px-4 py-3 text-sm font-medium capitalize focus:outline-none ${
                     activeTab === tab
-                      ? "bg-white text-blue-600 border-b-2 border-blue-600"
-                      : "bg-white text-gray-500 hover:text-gray-700"
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   {tab}
@@ -304,6 +510,7 @@ export default function Crime() {
             </div>
           </div>
         </div>
+        {/* /Chat & Side tabs */}
       </div>
     </div>
   );
