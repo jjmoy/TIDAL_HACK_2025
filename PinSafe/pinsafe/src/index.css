@@ -1,6 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Force light appearance for native controls (inputs, selects, buttons) */
+:root { color-scheme: light; }
+
+/* Belt-and-suspenders: never allow horizontal scrolling */
+html, body { overflow-x: hidden; background:#fff; }
+
+/* Some browsers still layout transformed children wider; clip it. */
+#root, #__root { overflow-x: clip; }
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
