@@ -51,6 +51,7 @@ export default function Crime() {
     crimeType: "",
     severity: 3,
     incidentTime: "",
+    description: "",
   });
 
   // Click on the map to drop a pin and show report form
@@ -72,6 +73,7 @@ export default function Crime() {
           crimeType: "",
           severity: 3,
           incidentTime: localDateTime,
+          description: "",
         });
       },
     });
@@ -102,6 +104,7 @@ export default function Crime() {
           crimeType: "",
           severity: 3,
           incidentTime: localDateTime,
+          description: "",
         });
       },
       () => {
@@ -130,6 +133,7 @@ export default function Crime() {
       crime_type: reportForm.crimeType,
       severity: parseInt(reportForm.severity),
       incident_datetime: sqliteDateTime, // SQLite3 format: "2025-10-25 14:30:00"
+      description: reportForm.description,
     };
     
     console.log("SQLite3 format:", reportData);
@@ -143,6 +147,7 @@ export default function Crime() {
       crimeType: "",
       severity: 3,
       incidentTime: "",
+      description: "",
     });
   };
 
@@ -185,7 +190,7 @@ export default function Crime() {
                 <input
                   type="text"
                   placeholder="Search location..."
-                  className="w-full text-black pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="text-black w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -198,7 +203,8 @@ export default function Crime() {
             center={center}
             zoom={zoom}
             ref={mapRef}
-            className="h-[50vh] w-full"
+            className="w-full rounded-xl"
+            style={{ height: "clamp(520px, 75vh, 900px)" }}  // taller map, responsive
             scrollWheelZoom
           >
             <TileLayer
@@ -272,6 +278,19 @@ export default function Crime() {
                       />
                     </div>
 
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={reportForm.description}
+                        onChange={(e) => setReportForm({...reportForm, description: e.target.value})}
+                        placeholder="Describe what happened..."
+                        rows={3}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 resize-none"
+                      />
+                    </div>
+
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={handleSubmitReport}
@@ -281,7 +300,7 @@ export default function Crime() {
                       </button>
                       <button
                         onClick={() => setPin(null)}
-                        className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                        className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-blue-700"
                       >
                         Cancel
                       </button>
@@ -291,15 +310,16 @@ export default function Crime() {
               </Marker>
             )}
           </MapContainer>
-
-          {/* Floating Report Button */}
+        <div className="mt-3 flex justify-end">
           <button
             onClick={() => setReportDrawerOpen((v) => !v)}
-            className="absolute bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center space-x-2 hover:scale-105 focus:outline-none focus:ring-0"
-          >
+            className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center space-x-2 hover:scale-105 focus:outline-none focus:ring-0"
+          > 
             <Bell className="w-5 h-5" />
             <span className="font-semibold">Report</span>
           </button>
+          </div>
+
         </div>
 
         {/* Report Drawer (original, kept for reference) */}
@@ -404,13 +424,13 @@ export default function Crime() {
           </div>
 
           {/* Side tabs/info */}
-          <div className="bg-white rounded-xl border border-white p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="bg-white flex border-b border-gray-200">
               {["history", "stats"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`bg-white flex-1 px-4 py-3 text-sm font-medium capitalize focus:outline-none ${
+                  className={`bg-white text-gray-500 flex-1 px-4 py-3 text-sm font-medium capitalize focus:outline-none ${
                     activeTab === tab
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-gray-500 hover:text-gray-700"
