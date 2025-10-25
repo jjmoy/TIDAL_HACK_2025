@@ -37,6 +37,15 @@ export default function Crime() {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [activeTab, setActiveTab] = useState("history");
+  const pinIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  });
 
   // --- Map state ---
   const mapRef = useRef(null);
@@ -218,7 +227,7 @@ export default function Crime() {
             <ClickToPin />
 
             {pin && (
-              <Marker position={[pin.lat, pin.lng]}>
+              <Marker position={[pin.lat, pin.lng]} icon={pinIcon}>
                 <Popup maxWidth={350} autoOpen={true} closeOnClick={false}>
                   <div className="p-2">
                     <h3 className="font-bold text-lg mb-3">Report Incident</h3>
@@ -329,10 +338,10 @@ export default function Crime() {
         {reportDrawerOpen && (
           <div className="mt-4 bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">New Report</h3>
+              <h3 className="text-2xl font-bold text-gray-800">New Report</h3>
               <button
                 onClick={() => setReportDrawerOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition focus:outline-none focus:ring-0"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-0"
               >
                 ✕
               </button>
@@ -342,7 +351,7 @@ export default function Crime() {
 
             <button
               onClick={() => setReportDrawerOpen(false)}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold focus:outline-none focus:ring-0"
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-0"
             >
               Close
             </button>

@@ -18,7 +18,7 @@ export default function App() {
         <div className="flex justify-between items-center h-16">
           <button
             onClick={() => navigate("home")}
-            className="focus:outline-none bg-white flex items-center space-x-2 cursor-pointer"
+            className="focus:outline-none bg-white flex items-center space-x-2 cursor-pointer focus:ring-0 hover:outline-none hover:ring-0"
           >
             <Shield className="w-8 h-8 text-blue-600" />
             <span className="text-2xl font-bold text-gray-900">PinSafe</span>
