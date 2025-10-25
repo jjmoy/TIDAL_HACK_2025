@@ -24,7 +24,7 @@ export default function Crime() {
   const [activeTab, setActiveTab] = useState("history");
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 overflow-hidden">
+    <div className="min-h-screen w-screen bg-gray-50 pt-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Toolbar */}
         <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -33,19 +33,19 @@ export default function Crime() {
               <Locate className="w-4 h-4" />
               <span className="hidden sm:inline">Locate Me</span>
             </button>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <select className="px-4 py-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option>0.5 miles</option>
               <option>1 mile</option>
               <option>2 miles</option>
               <option>5 miles</option>
             </select>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <select className="px-4 py-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option>All Types</option>
               <option>Theft</option>
               <option>Assault</option>
               <option>Vandalism</option>
             </select>
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <button className="bg-blue-600 flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-700 transition">
               <Layers className="w-4 h-4" />
               <span className="hidden sm:inline">Toggle View</span>
             </button>
@@ -206,7 +206,7 @@ export default function Crime() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask about safety..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && chatInput.trim()) {
                     setChatMessages((m) => [...m, { type: "user", text: chatInput }]);
@@ -237,8 +237,8 @@ export default function Crime() {
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 px-4 py-3 text-sm font-medium capitalize ${
                     activeTab === tab
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-blue-600 border-b-2 border-blue-600"
+                      : "bg-white text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   {tab}
