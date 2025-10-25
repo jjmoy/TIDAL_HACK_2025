@@ -21,7 +21,7 @@ export default function App() {
             className="focus:outline-none bg-white flex items-center space-x-2 cursor-pointer"
           >
             <Shield className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">SafePath</span>
+            <span className="text-2xl font-bold text-gray-900">PinSafe</span>
           </button>
 
           <div className="hidden md:flex items-center space-x-6">

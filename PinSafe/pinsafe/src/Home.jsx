@@ -71,9 +71,9 @@ export default function Home({ onUseApp }) {
               </div>
             </div>
             <div className="space-y-6">
-              <h2 className="text-4xl font-bold text-gray-900">About SafePath</h2>
+              <h2 className="text-4xl font-bold text-gray-900">About PinSafe</h2>
               <p className="text-lg text-gray-600">
-                SafePath is a community-driven platform that empowers people to make informed decisions about their safety. By crowdsourcing incident reports and leveraging AI, we provide real-time safety intelligence for any location.
+                PinSafe is a community-driven platform that empowers people to make informed decisions about their safety. By crowdsourcing incident reports and leveraging AI, we provide real-time safety intelligence for any location.
               </p>
               <p className="text-lg text-gray-600">
                 Our mission is to create safer communities through transparency, collaboration, and technology. Every report helps others stay informed and make better choices.
@@ -210,7 +210,7 @@ export default function Home({ onUseApp }) {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Shield className="w-6 h-6 text-blue-400" />
-                <span className="text-xl font-bold text-white">SafePath</span>
+                <span className="text-xl font-bold text-white">PinSafe</span>
               </div>
               <p className="text-sm text-gray-400">
                 Community-powered safety intelligence for everyone, everywhere.
@@ -227,17 +227,17 @@ export default function Home({ onUseApp }) {
               <h4 className="text-white font-semibold mb-4">Contact</h4>
               <div className="flex items-center space-x-2 text-sm">
                 <Mail className="w-4 h-4" />
-                <a href="mailto:contact@safepath.com" className="hover:text-blue-400 transition">
-                  contact@safepath.com
+                <a href="mailto:contact@pinsafe.com" className="hover:text-blue-400 transition">
+                  contact@pinsafe.com
                 </a>
               </div>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8">
             <p className="text-sm text-gray-500 text-center">
-              <strong>Disclaimer:</strong> Community-reported data is provided for informational purposes only. SafePath does not verify all reports and is not responsible for accuracy or completeness. Always use your best judgment and contact local authorities for emergencies.
+              <strong>Disclaimer:</strong> Community-reported data is provided for informational purposes only. PinSafe does not verify all reports and is not responsible for accuracy or completeness. Always use your best judgment and contact local authorities for emergencies.
             </p>
-            <p className="text-sm text-gray-500 text-center mt-4">© 2025 SafePath. All rights reserved.</p>
+            <p className="text-sm text-gray-500 text-center mt-4">© 2025 PinSafe. All rights reserved.</p>
           </div>
         </div>
       </footer>
