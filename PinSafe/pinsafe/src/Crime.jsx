@@ -49,7 +49,7 @@ export default function Crime() {
 
   // --- Map state ---
   const mapRef = useRef(null);
-  const [center, setCenter] = useState([37.7749, -122.4194]); // default: San Francisco
+  const [center, setCenter] = useState([30.612442446300182, -96.34154450441397]); // default: Texas A&M (College Station)
   const [zoom, setZoom] = useState(13);
   const [pin, setPin] = useState(null); // { lat, lng }
   
