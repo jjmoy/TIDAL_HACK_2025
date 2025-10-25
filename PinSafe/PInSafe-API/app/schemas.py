@@ -17,3 +17,6 @@ class IncidentRead(IncidentCreate):
 
     class Config:
         from_attributes = True
+        
+class NearbyIncident(IncidentRead):
+    distance_m: float
