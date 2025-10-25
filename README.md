@@ -46,3 +46,6 @@ Working AI chatbot integration with the database.
 
 ### Frontend
 - Make sure node.js is installed, once installed, go to the pinsafe (not PinSafe) directory and do npm install, and then npm run dev to boot up the frontend server.
+
+### Backend
+- Make sure that uvicorn and fastAPI are installed. Go to the PinSafe-API directory and run start the back end via uvicorn.
