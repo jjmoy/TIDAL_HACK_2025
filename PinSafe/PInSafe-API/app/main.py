@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .routers import report
+from.routers import nearby
 
 app = FastAPI()
 
@@ -22,3 +23,4 @@ app.add_middleware(
 )
 
 app.include_router(report.router)
+app.include_router(nearby.router)
