@@ -11,11 +11,11 @@ def seed():
 
     # Each entry = (lat, lng, location, note)
     incidents_data = [
-        (30.6155, -96.3400, "Evans Library", "Bike stolen near Evans Library racks."),
-        (30.6127, -96.3419, "Memorial Student Center (MSC)", "Argument reported outside MSC fountain."),
-        (30.6200, -96.3403, "Zachry Engineering Education Complex", "Backpack taken from study lounge in Zachry."),
-        (30.6182, -96.3432, "Northgate District", "Group loitering near Northgate around midnight."),
-        (30.6105, -96.3424, "Lot 50 Parking", "Suspicious vehicle slowly circling Lot 50."),
+        (30.616833, -96.339222, "Evans Library", "Bike stolen near Evans Library racks."),
+        (30.611904, -96.341012, "Memorial Student Center (MSC)", "Argument reported outside MSC fountain."),
+        (30.621263, -96.340875, "Zachry Engineering Education Complex", "Backpack taken from study lounge in Zachry."),
+        (30.620669, -96.343843, "Northgate District", "Group loitering near Northgate around midnight."),
+        (30.624112, -96.336946, "Lot 50 Parking", "Suspicious vehicle slowly circling Lot 50."),
         (30.6119, -96.3441, "Wellborn Road Walkway", "Harassment reported while walking along Wellborn."),
         (30.6175, -96.3407, "Hullabaloo Hall", "Broken glass found at dorm entrance."),
         (30.6101, -96.3401, "Kyle Field", "Attempted wallet snatch after the football game."),
