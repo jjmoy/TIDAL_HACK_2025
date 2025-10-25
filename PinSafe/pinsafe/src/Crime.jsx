@@ -26,12 +26,10 @@ L.Icon.Default.mergeOptions({
 });
 
 // Format a datetime-local value to SQLite "YYYY-MM-DD HH:MM:SS"
-function toSQLiteDateTime(dtLocal) {
-  if (!dtLocal) return "";
-  // dtLocal like "2025-10-25T14:05"
-  // ensure seconds
-  const withSeconds = dtLocal.length === 16 ? `${dtLocal}:00` : dtLocal;
-  return withSeconds.replace("T", " ");
+function toSQLiteDateTime(localDateTime) {
+  if (!localDateTime) return null;
+  const dt = new Date(localDateTime);
+  return dt.toISOString(); // "2025-10-25T19:03:03.000Z"
 }
 
 export default function Crime() {
@@ -98,22 +96,54 @@ export default function Crime() {
   }, [draftPin]);
 
   // Handle popup form submit
-  const handleSubmitReport = (e) => {
+  async function handleSubmitReport(e) {
     e.preventDefault();
-    if (!draftPin) return;
-    const sqliteDate = toSQLiteDateTime(draftPin.datetime);
-    const newReport = {
+
+    // Basic validation
+    if (!draftPin?.lat || !draftPin?.lng || !draftPin?.type || !draftPin?.severity) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    const payload = {
       lat: draftPin.lat,
       lng: draftPin.lng,
-      type: draftPin.type || "Other",
-      severity: Number(draftPin.severity || 3),
-      datetime: sqliteDate || toSQLiteDateTime(new Date().toISOString().slice(0,16)),
+      type: draftPin.type.toLowerCase(),
+      severity: Number(draftPin.severity),
+      note: draftPin.note || "",
+      time_of_incident: toSQLiteDateTime(draftPin.datetime),
     };
-    setReports((r) => [...r, newReport]);
-    setDraftPin(null); // close popup by removing draft
-    // Optionally: show a toast, write to API/DB, etc.
-    console.log("Saved report:", newReport);
-  };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/report/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Error creating report:", err);
+        alert("Failed to save report.");
+        return;
+      }
+
+      const data = await res.json();
+      console.log("✅ Report saved:", data);
+
+      // Optionally refresh markers
+      setReports((prev) => [...prev, data]);
+
+      // Close popup and clear draft pin
+      setDraftPin(null);
+
+    } catch (err) {
+      console.error("Error submitting report:", err);
+      alert("Error connecting to API.");
+    }
+  }
 
   return (
     <div className="min-h-screen w-screen bg-gray-50 pt-16 overflow-hidden">
