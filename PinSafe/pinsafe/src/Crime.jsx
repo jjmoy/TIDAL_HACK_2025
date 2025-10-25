@@ -89,7 +89,9 @@ export default function Crime() {
         setCenter(latlng);
         setZoom(15);
         const map = mapRef.current;
-        if (map) map.setView(latlng, 15, { animate: true });
+        if (map) {
+          map.flyTo(latlng, 15, { duration: 0.8 });
+        }
         setPin({ lat: latlng[0], lng: latlng[1] });
         
         // Pre-fill form
@@ -202,11 +204,12 @@ export default function Crime() {
           <MapContainer
             center={center}
             zoom={zoom}
-            ref={mapRef}
             className="w-full rounded-xl"
-            style={{ height: "clamp(520px, 75vh, 900px)" }}  // taller map, responsive
+            style={{ height: "clamp(520px, 75vh, 900px)" }}
             scrollWheelZoom
+            whenCreated={(map) => (mapRef.current = map)}   // ← add this
           >
+
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

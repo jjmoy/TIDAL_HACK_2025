@@ -25,9 +25,7 @@ export default function App() {
           </button>
 
           <div className="hidden md:flex items-center space-x-6">
-            <button onClick={() => navigate("home")} className="text-white hover:text-blue-300 bg-blue-700 transition-colors font-medium">Home</button>
-            <button onClick={() => navigate("home")} className="text-white hover:text-blue-300 bg-blue-700 transition-colors font-medium">About</button>
-            <button onClick={() => navigate("home")} className="text-white hover:text-blue-300 bg-blue-700 transition-colors font-medium">How It Works</button>
+            <button onClick={() => navigate("home")} className="text-white focus:outline-none border:none hover:text-blue-300 bg-blue-700 transition-colors font-medium">Home</button>
             <button
               onClick={() => navigate("crime")}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 hover:text-blue-300 transition-colors font-semibold"
@@ -45,9 +43,7 @@ export default function App() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-4 py-4 space-y-3">
-            <button onClick={() => navigate("home")} className="text-white hover:text-blue-300 bg-blue-700 transition-colors font-medium">Home</button>
-            <button onClick={() => navigate("home")} className="text-white hover:text-blue-300 bg-blue-700 transition-colors font-medium">About</button>
-            <button onClick={() => navigate("home")} className="text-white hover:text-blue-300 bg-blue-700 transition-colors font-medium">How It Works</button>
+            <button onClick={() => navigate("home")} className="text-white focus:outline:none hover:text-blue-300 bg-blue-700 border-blue-300 transition-colors font-medium">Home</button>
             <button
               onClick={() => navigate("crime")}
               className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"

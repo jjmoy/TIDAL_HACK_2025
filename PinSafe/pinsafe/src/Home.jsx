@@ -1,4 +1,5 @@
 import React from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
 import {
   MapPin,
   MessageSquare,
@@ -9,6 +10,28 @@ import {
   ChevronRight,
   Mail,
 } from "lucide-react";
+
+function MapPreview() {
+  const center = [37.7749, -122.4194]; // pick any demo center
+  return (
+    <div className="h-40 w-full">
+      <MapContainer
+        center={center}
+        zoom={12}
+        className="h-full w-full rounded-lg pointer-events-none"
+        scrollWheelZoom={false}
+        dragging={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        keyboard={false}
+        zoomControl={false}
+        attributionControl={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      </MapContainer>
+    </div>
+  );
+}
 
 export default function Home({ onUseApp }) {
   return (
@@ -33,9 +56,6 @@ export default function Home({ onUseApp }) {
                   <span>Use the App</span>
                   <ChevronRight className="w-5 h-5" />
                 </button>
-                <button className="bg-blue-600 text-white border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:border-blue-200 hover:text-blue-300 transition">
-                  Learn More
-                </button>
               </div>
             </div>
 
@@ -47,9 +67,7 @@ export default function Home({ onUseApp }) {
                     <MapPin className="w-12 h-12 text-blue-600" />
                     <MessageSquare className="w-12 h-12 text-purple-600" />
                   </div>
-                  <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Interactive Map Preview</span>
-                  </div>
+                  <MapPreview />
                   <div className="bg-gray-50 rounded-lg p-4">
                     <p className="text-sm text-gray-600">"Is it safe here?"</p>
                     <p className="text-sm text-blue-600 mt-2">Area labeled Safe ✓</p>
@@ -176,7 +194,7 @@ export default function Home({ onUseApp }) {
                 icon: MapPin,
                 title: "Location Context",
                 description:
-                  "Understand safety patterns in specific neighborhoods with detailed geographic analysis.",
+                  "Understand safety patterns in specific neighborhoods with geographic analysis.",
               },
               {
                 icon: Users,
